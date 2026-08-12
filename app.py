@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # app.py (整合最終版：內嵌所有資料庫管家，絕不發生匯入錯誤)
 import streamlit as st
 import datetime
