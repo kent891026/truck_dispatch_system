@@ -58,9 +58,10 @@ def render_login_page():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         with st.container(border=True):
-            username = st.text_input("帳號")
-            password = st.text_input("密碼", type="password")
-            login_btn = st.button("登入系統", use_container_width=True)
+            # 🌟 加上 key 避免重複 ID 衝突
+            username = st.text_input("帳號", key="login_username")
+            password = st.text_input("密碼", type="password", key="login_password")
+            login_btn = st.button("登入系統", use_container_width=True, key="login_submit_btn")
             
             if login_btn:
                 clean_user = username.strip().lower()
