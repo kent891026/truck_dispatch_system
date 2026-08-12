@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import streamlit as st
 
 def render_login_page():
@@ -48,7 +48,6 @@ def render_sidebar_logout():
             st.session_state["role"] = None
             st.rerun()
             
-=======
 import streamlit as st
 
 def render_login_page():
@@ -97,6 +96,4 @@ def render_sidebar_logout():
             st.session_state["logged_in"] = False
             st.session_state["role"] = None
             st.rerun()
-            
->>>>>>> 6dc226a02ff70a5de420748604475cf5f3b56fad
         return selected_page

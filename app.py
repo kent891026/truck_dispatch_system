@@ -460,7 +460,7 @@ else:
                     st.rerun()
                 rules = get_all_price_rules()
                 if rules:
-=======
+                    st.dataframe(pd.DataFrame([{"地區": r.region_name, "基礎運費": r.base_price} for r in rules]), use_container_width=True, hide_index=True)
 # app.py (整合最終版：內嵌所有資料庫管家，絕不發生匯入錯誤)
 import streamlit as st
 import datetime

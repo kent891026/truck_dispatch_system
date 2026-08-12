@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 
 
 # 定義地區與薪資的對應字典 (Key: 地區, Value: 基礎薪資)
@@ -147,8 +146,6 @@ if __name__ == "__main__":
     for key, value in monthly_report.items():
         print(f"{key}: {value} 元")
 
-=======
-
 
 # 定義地區與薪資的對應字典 (Key: 地區, Value: 基礎薪資)
 RAW_DESTINATION_RATES = {
@@ -295,5 +292,3 @@ if __name__ == "__main__":
     # 用迴圈把字典裡的明細一行一行印出來檢查
     for key, value in monthly_report.items():
         print(f"{key}: {value} 元")
-
->>>>>>> 6dc226a02ff70a5de420748604475cf5f3b56fad

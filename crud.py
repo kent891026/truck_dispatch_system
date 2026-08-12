@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import datetime # 匯入時間套件，方便在備註裡加上修改時間戳記
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -150,7 +149,6 @@ def update_or_add_price_rule(region_name: str, base_price: int):
         print(f"更新費率失敗: {e}")
         return False
     finally:
-=======
 import datetime # 匯入時間套件，方便在備註裡加上修改時間戳記
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -302,5 +300,4 @@ def update_or_add_price_rule(region_name: str, base_price: int):
         print(f"更新費率失敗: {e}")
         return False
     finally:
->>>>>>> 6dc226a02ff70a5de420748604475cf5f3b56fad
         session.close()
