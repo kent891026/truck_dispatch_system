@@ -875,5 +875,4 @@ else:
                     st.rerun()
                 rules = get_all_price_rules()
                 if rules:
->>>>>>> 6dc226a02ff70a5de420748604475cf5f3b56fad
                     st.dataframe(pd.DataFrame([{"地區": r.region_name, "運費": r.base_price} for r in rules]), use_container_width=True, hide_index=True)

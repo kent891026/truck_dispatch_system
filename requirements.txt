@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 streamlit
 SQLAlchemy
 pandas
-=======
-streamlit
-SQLAlchemy
-pandas
->>>>>>> 6dc226a02ff70a5de420748604475cf5f3b56fad
 bcrypt
