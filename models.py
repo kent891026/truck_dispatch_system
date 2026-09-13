@@ -1,5 +1,4 @@
 
-
 # 匯入會用到的欄位型態
 import string
 from sqlalchemy import Column, Integer, String, Boolean
@@ -86,7 +85,7 @@ if __name__ == "__main__":
     engine = create_engine('sqlite:///test_truck.db', echo=True)
     
     # create_all 會自動檢查，把尚未建立的新表格 (Driver, Truck, PriceRule) 蓋出來
-    # 注意：SQLite 原生不支援直接在舊表格 (dispatch_orders) 中新增欄位。
+    # SQLite 原生不支援直接在舊表格 (dispatch_orders) 中新增欄位。
     # 為了開發方便，如果遇到舊表格無法自動擴充的問題，建議先刪除舊的 test_truck.db 檔案，
     # 讓程式重新建立一個包含所有新欄位的乾淨資料庫。
     Base.metadata.create_all(engine)
