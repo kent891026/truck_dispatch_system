@@ -1,15 +1,36 @@
-# app.py (全面補上唯一 Key 的最終完整版)
 import streamlit as st
 import datetime
 import pandas as pd
 import auth
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base
+from calculator import calculate_single_trip, calculate_monthly_salary, DESTINATION_PRICES
 
 # 1. 網頁基礎設定
 st.set_page_config(page_title="派車管理系統", layout="wide")
 
-# 資料庫藍圖與管家直接宣告
+# 注入全局 CSS 美化內部頁面
+st.markdown("""
+    <style>
+    /* 統一字體與隱藏預設干擾元素 */
+    font-family: 'Helvetica Neue', Helvetica, Arial, 'Microsoft JhengHei', sans-serif;
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* 讓卡片邊框更柔和 */
+    div[data-testid="stVerticalBlock"] > div[style*="border"] {
+        border-radius: 12px;
+        border: 1px solid #e0e6ed;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        background-color: #ffffff;
+    }
+    
+    /* 美化標題顏色 */
+    h2, h4 { color: #2C3E50 !important; font-weight: 600; }
+    </style>
+""", unsafe_allow_html=True)
+
+# 資料庫藍圖與管家直接宣告 (保留原設定)
 Base = declarative_base()
 
 class DriverModel(Base):
@@ -94,7 +115,7 @@ def create_or_update_dispatch_order(dispatch_order: DispatchOrderModel) -> bool:
             session.add(dispatch_order)
             session.commit()
         return True
-    except Exception as e:
+    except:
         session.rollback() 
         return False
     finally:
@@ -103,10 +124,7 @@ def create_or_update_dispatch_order(dispatch_order: DispatchOrderModel) -> bool:
 def get_order_by_driver_and_month(driver_id: str, year_month: str):
     session = SessionLocal()
     try:
-        return session.query(DispatchOrderModel).filter(
-            DispatchOrderModel.driver_id == driver_id, 
-            DispatchOrderModel.date.startswith(year_month)
-        ).all()
+        return session.query(DispatchOrderModel).filter(DispatchOrderModel.driver_id == driver_id, DispatchOrderModel.date.startswith(year_month)).all()
     except:
         return [] 
     finally:
@@ -114,71 +132,55 @@ def get_order_by_driver_and_month(driver_id: str, year_month: str):
 
 def get_all_drivers():
     session = SessionLocal()
-    try:
-        return session.query(DriverModel).all()
-    finally:
-        session.close()
+    try: return session.query(DriverModel).all()
+    finally: session.close()
 
 def add_driver(driver_id: str, name: str):
     session = SessionLocal()
     try:
-        new_driver = DriverModel(driver_id=driver_id, name=name, is_active=True)
-        session.add(new_driver)
+        session.add(DriverModel(driver_id=driver_id, name=name, is_active=True))
         session.commit()
         return True
     except:
         session.rollback()
         return False
-    finally:
-        session.close()
+    finally: session.close()
 
 def get_all_trucks():
     session = SessionLocal()
-    try:
-        return session.query(TruckModel).all()
-    finally:
-        session.close()
+    try: return session.query(TruckModel).all()
+    finally: session.close()
 
 def add_truck(truck_number: str, size: str):
     session = SessionLocal()
     try:
-        new_truck = TruckModel(truck_number=truck_number, size=size)
-        session.add(new_truck)
+        session.add(TruckModel(truck_number=truck_number, size=size))
         session.commit()
         return True
     except:
         session.rollback()
         return False
-    finally:
-        session.close()
+    finally: session.close()
 
 def get_all_price_rules():
     session = SessionLocal()
-    try:
-        return session.query(PriceRuleModel).all()
-    finally:
-        session.close()
+    try: return session.query(PriceRuleModel).all()
+    finally: session.close()
 
 def update_or_add_price_rule(region_name: str, base_price: int):
     session = SessionLocal()
     try:
         rule = session.query(PriceRuleModel).filter(PriceRuleModel.region_name == region_name).first()
-        if rule:
-            rule.base_price = base_price
-        else:
-            session.add(PriceRuleModel(region_name=region_name, base_price=base_price))
+        if rule: rule.base_price = base_price
+        else: session.add(PriceRuleModel(region_name=region_name, base_price=base_price))
         session.commit()
         return True
     except:
         session.rollback()
         return False
-    finally:
-        session.close()
+    finally: session.close()
 
-# 匯入計價大腦
-from calculator import calculate_single_trip, calculate_monthly_salary, DESTINATION_PRICES
-
-# 登入狀態初始化與畫面派發
+# 登入與頁面派發
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["role"] = None
@@ -189,7 +191,7 @@ else:
     selected_page = auth.render_sidebar_logout()
 
     if selected_page == "每日派車單輸入":
-        st.markdown("<h2 style='text-align: center; color: #2C3E50;'>填寫每日派車單</h2><hr>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>填寫每日派車單</h2><hr>", unsafe_allow_html=True)
         
         drivers_db = get_all_drivers()
         EXISTING_DRIVERS = [f"{d.driver_id} ({d.name})" for d in drivers_db] if drivers_db else ["0599 (AAA)", "1099 (BBB)"]
@@ -204,17 +206,14 @@ else:
         ]
         EXISTING_REGIONS = list(DESTINATION_PRICES.keys()) + ["新增地區..."]
 
-        # 卡片 1：司機與車輛配置
         st.markdown("#### 司機與車輛配置")
         with st.container(border=True):
             col1, col2 = st.columns(2)
-            
             with col1:
                 st.markdown("司機代號 <span style='color:red'>*</span>", unsafe_allow_html=True)
                 selected_driver = st.selectbox("司機代號", EXISTING_DRIVERS, label_visibility="collapsed", key="input_driver_select")
                 if selected_driver == "新增司機...":
-                    st.markdown("請輸入新司機代號 <span style='color:red'>*</span>", unsafe_allow_html=True)
-                    real_driver = st.text_input("新司機代號", key="input_new_driver_id", label_visibility="collapsed")
+                    real_driver = st.text_input("新司機代號", key="input_new_driver_id", placeholder="例如：001")
                 else:
                     real_driver = selected_driver.split(" ")[0]
                     
@@ -226,18 +225,12 @@ else:
                 st.markdown("出勤車號 (含尺寸) <span style='color:red'>*</span>", unsafe_allow_html=True)
                 truck_filter = st.radio("快速篩選", ["顯示全部", "只看 20呎", "只看 40呎"], horizontal=True, label_visibility="collapsed", key="input_truck_filter")
                 
-                filtered_trucks = []
-                for truck in RAW_TRUCKS:
-                    if truck_filter == "顯示全部": filtered_trucks.append(truck)
-                    elif truck_filter == "只看 20呎" and "20呎" in truck: filtered_trucks.append(truck)
-                    elif truck_filter == "只看 40呎" and "40呎" in truck: filtered_trucks.append(truck)
+                filtered_trucks = [t for t in RAW_TRUCKS if (truck_filter == "顯示全部") or (truck_filter == "只看 20呎" and "20呎" in t) or (truck_filter == "只看 40呎" and "40呎" in t)]
                 filtered_trucks.append("新增車輛...")
-                
                 selected_truck = st.selectbox("出勤車號", filtered_trucks, label_visibility="collapsed", key="input_truck_select")
                 
                 if selected_truck == "新增車輛...":
-                    st.markdown("請輸入新車號 <span style='color:red'>*</span>", unsafe_allow_html=True)
-                    new_truck_num = st.text_input("新車號", key="input_new_truck_num", label_visibility="collapsed")
+                    new_truck_num = st.text_input("新車號", key="input_new_truck_num", placeholder="例如：AA-1234")
                     new_truck_size = st.radio("請選擇車型", ["20呎", "40呎"], horizontal=True, key="input_new_truck_size")
                     real_truck = f"{new_truck_num} ({new_truck_size})" if new_truck_num else ""
                 else:
@@ -246,20 +239,19 @@ else:
                 st.markdown("貨櫃櫃號 <span style='color:red'>*</span>", unsafe_allow_html=True)
                 raw_container_id = st.text_input("貨櫃櫃號", placeholder="例如：TGHU1234567", label_visibility="collapsed", key="input_container_id")
 
-        # 卡片 2：運送路線資訊
-        st.markdown("#### 📍 運送路線資訊")
+        st.markdown("#### 運送路線資訊")
         with st.container(border=True):
             col3, col4 = st.columns(2)
             with col3:
                 st.markdown("起運點 (公司名) <span style='color:red'>*</span>", unsafe_allow_html=True)
                 point_of_origin = st.text_input("起運點", placeholder="例如：某海運公司", label_visibility="collapsed", key="input_point_of_origin")
-                cargo_owner = st.text_input("貨主名稱 (非必填)", placeholder="例如：貨主名稱", key="input_cargo_owner")
+                cargo_owner = st.text_input("貨主名稱 (非必填)", placeholder="例如：長榮海運", key="input_cargo_owner")
                 
             with col4:
                 destination_address = st.text_input("下貨地址 (非必填)", placeholder="例如：新北市五股區...", key="input_dest_address")
-                st.markdown("計價地區 (用於計算薪資) <span style='color:red'>*</span>", unsafe_allow_html=True)
+                st.markdown("計價地區 <span style='color:red'>*</span>", unsafe_allow_html=True)
+                region_filter = st.radio("地區篩選", ["顯示全部", "北部", "中部", "南部"], horizontal=True, label_visibility="collapsed", key="input_region_filter")
                 
-                region_filter = st.radio("地區篩選", ["顯示全部", "北部 (北北基桃竹宜)", "中部 (苗中彰投雲)", "南部 (嘉南高屏)"], horizontal=True, label_visibility="collapsed", key="input_region_filter")
                 CENTRAL_KWS = ["苗栗", "通霄", "後龍", "三義", "后里", "台中", "彰化", "員林", "南投", "雲林", "斗六", "斗南"]
                 SOUTH_KWS = ["嘉義", "台南", "高雄", "屏東"]
                 
@@ -268,22 +260,15 @@ else:
                     is_south = any(kw in r for kw in SOUTH_KWS)
                     is_central = any(kw in r for kw in CENTRAL_KWS)
                     is_north = not is_south and not is_central 
-                    
                     if region_filter == "顯示全部": filtered_regions.append(r)
-                    elif "北部" in region_filter and is_north: filtered_regions.append(r)
-                    elif "中部" in region_filter and is_central: filtered_regions.append(r)
-                    elif "南部" in region_filter and is_south: filtered_regions.append(r)
+                    elif region_filter == "北部" and is_north: filtered_regions.append(r)
+                    elif region_filter == "中部" and is_central: filtered_regions.append(r)
+                    elif region_filter == "南部" and is_south: filtered_regions.append(r)
                         
                 filtered_regions.append("新增地區...")
                 selected_region = st.selectbox("計價地區", filtered_regions, label_visibility="collapsed", key="input_region_select")
-                
-                if selected_region == "新增地區...":
-                    st.markdown("請輸入新計價地區 <span style='color:red'>*</span>", unsafe_allow_html=True)
-                    real_region = st.text_input("新計價地區", key="input_new_region_name", label_visibility="collapsed")
-                else:
-                    real_region = selected_region
+                real_region = st.text_input("新計價地區", key="input_new_region_name") if selected_region == "新增地區..." else selected_region
 
-        # 卡片 3：特殊加給與備註
         st.markdown("#### 特殊加給與備註")
         with st.container(border=True):
             col5, col6 = st.columns(2)
@@ -297,24 +282,19 @@ else:
                 is_holiday = st.checkbox("假日出車 (+1000元)", key="chk_holiday")
                 early_shift_option = st.selectbox("早車時段", ["無", "03:00 (+200元)", "05:00 (+100元)"], key="sel_early_shift")
                 early_shift_type = "03:00" if "03:00" in early_shift_option else "05:00" if "05:00" in early_shift_option else None
-                unloading_overtime_hours = st.number_input("卸貨超時 (小時)", min_value=0, max_value=24, value=0, key="num_overtime")
+                unloading_overtime_hours = st.number_input("⏱卸貨超時 (小時)", min_value=0, max_value=24, value=0, key="num_overtime")
                 
-            auto_tags = []
-            if has_freezing_plate: auto_tags.append("冷凍板")
-            if has_weighting: auto_tags.append("過磅")
-            if has_danger_tag: auto_tags.append("危標")
-            if has_instrument_inspection: auto_tags.append("儀檢")
-            if is_night_shift: auto_tags.append("夜間")
-            if is_holiday: auto_tags.append("假日")
-            if early_shift_type: auto_tags.append(f"早車{early_shift_type}")
-            if unloading_overtime_hours > 0: auto_tags.append(f"超時{unloading_overtime_hours}hr")
+            auto_tags = [tag for tag, condition in zip(
+                ["冷凍板", "過磅", "危標", "儀檢", "夜間", "假日", f"早車{early_shift_type}", f"超時{unloading_overtime_hours}hr"],
+                [has_freezing_plate, has_weighting, has_danger_tag, has_instrument_inspection, is_night_shift, is_holiday, early_shift_type, unloading_overtime_hours > 0]
+            ) if condition]
             
             auto_text = f"[系統標記: {', '.join(auto_tags)}]" if auto_tags else ""
             if auto_text:
-                st.info(f"**自動鎖定備註：** {auto_text}")
-            remarks = st.text_area("備註說明 (選填)", key="input_remarks")
+                st.info(f"自動鎖定備註： {auto_text}")
+            remarks = st.text_area("備註說明 (選填)", key="input_remarks", placeholder="輸入其他交辦事項...")
 
-        submitted = st.button("送出並儲存派車單", use_container_width=True, key="btn_submit_order")
+        submitted = st.button("送出並儲存派車單", use_container_width=True, type="primary", key="btn_submit_order")
         if submitted:
             clean_id = raw_container_id.replace(" ", "").replace("-", "").upper()
             if len(clean_id) != 11:
@@ -326,21 +306,26 @@ else:
                 final_remarks = f"{remarks} {auto_text}".strip() if auto_text else remarks
                 fees = calculate_single_trip(real_region, has_freezing_plate, has_weighting, has_danger_tag, has_instrument_inspection, is_night_shift, is_holiday, early_shift_type, unloading_overtime_hours)
                 
-                new_order = DispatchOrderModel(
-                    driver_id=real_driver, date=date.strftime("%Y-%m-%d"), container_id=formatted_container_id,
-                    point_of_origin=point_of_origin, destination_address=destination_address or "未填寫", 
-                    truck_number=real_truck, cargo_owner=cargo_owner or "未填寫", billing_region=real_region,
-                    is_return_trip=is_return_trip, has_weighting=has_weighting, has_danger_tag=has_danger_tag,
-                    has_instrument_inspection=has_instrument_inspection, has_freezing_plate=has_freezing_plate,
-                    is_night_shift=is_night_shift, is_holiday=is_holiday, early_shift_type=early_shift_type,
-                    unloading_overtime_hours=unloading_overtime_hours, basic_freight=fees["basic_freight"],
-                    subsidy_total=fees["subsidy_total"], remarks=final_remarks
-                )
-                if create_or_update_dispatch_order(new_order):
-                    st.success(f"成功！司機 {real_driver} 派車單已儲存。總計 ${fees['total_price']}")
+                # 訪客模式防護鎖
+                if st.session_state["role"] == "訪客":
+                    st.toast("訪客模式：已模擬驗算完畢，資料不會真實寫入資料庫！")
+                    st.success(f"【模擬成功】司機 {real_driver} 的派車單已處理。總計金額試算為 ${fees['total_price']}")
+                else:
+                    new_order = DispatchOrderModel(
+                        driver_id=real_driver, date=date.strftime("%Y-%m-%d"), container_id=formatted_container_id,
+                        point_of_origin=point_of_origin, destination_address=destination_address or "未填寫", 
+                        truck_number=real_truck, cargo_owner=cargo_owner or "未填寫", billing_region=real_region,
+                        is_return_trip=is_return_trip, has_weighting=has_weighting, has_danger_tag=has_danger_tag,
+                        has_instrument_inspection=has_instrument_inspection, has_freezing_plate=has_freezing_plate,
+                        is_night_shift=is_night_shift, is_holiday=is_holiday, early_shift_type=early_shift_type,
+                        unloading_overtime_hours=unloading_overtime_hours, basic_freight=fees["basic_freight"],
+                        subsidy_total=fees["subsidy_total"], remarks=final_remarks
+                    )
+                    if create_or_update_dispatch_order(new_order):
+                        st.success(f"成功！司機 {real_driver} 派車單已儲存。總計 ${fees['total_price']}")
 
     elif selected_page == "月底結算台":
-        st.markdown("<h2 style='text-align: center; color: #2C3E50;'>月底薪資結算台</h2><hr>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>月底薪資結算台</h2><hr>", unsafe_allow_html=True)
         with st.container(border=True):
             col1, col2 = st.columns(2)
             with col1:
@@ -370,7 +355,6 @@ else:
             if not records:
                 st.warning(f"找不到司機 {real_query_driver} 在 {query_month} 的派車紀錄！")
             else:
-                st.success(f"成功撈取 {len(records)} 筆派車單！")
                 table_data, trip_prices_array = [], []
                 for r in records:
                     single_total = r.basic_freight + r.subsidy_total
@@ -387,22 +371,19 @@ else:
                     trip_prices_array, full_attendance, safety_bonus, other_add, labor_health, phone_sub, other_deduct
                 )
                 st.markdown(f"### 司機 `{real_query_driver}` ｜ {query_month} 薪資核對總表")
-                st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True, column_config={
-                    "基本運費": st.column_config.NumberColumn(format="$%d"),
-                    "各項補貼": st.column_config.NumberColumn(format="$%d"),
-                    "單趟總計": st.column_config.NumberColumn(format="$%d"),
-                })
+                st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
+                
                 m1, m2, m3, m4 = st.columns(4)
                 m1.metric("總跑車趟次", f"{len(records)} 趟")
                 m2.metric("趟次薪資總額", f"${salary_report['月趟次總額']:,}")
                 m3.metric("6% 出車加給", f"+${salary_report['6%出車加給']:,}")
                 m4.metric("浮動加減項總計", f"${(full_attendance + safety_bonus + phone_sub + other_add - labor_health - other_deduct):,}")
                 st.markdown("---")
-                st.markdown(f"<div style='background-color: #F8F9F9; padding: 20px; border-radius: 10px; border-left: 5px solid #E74C3C;'><h3 style='margin: 0; color: #2C3E50; text-align: right;'>👑 本月最終實領總薪資： <span style='color: #E74C3C;'>${salary_report['實領薪資']:,} 元</span></h3></div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background-color: #f8f9fa; padding: 20px; border-radius: 12px; border-left: 6px solid #3498db; box-shadow: 0 4px 6px rgba(0,0,0,0.05);'><h2 style='margin: 0; color: #2C3E50; text-align: right;'>實領總薪資： <span style='color: #3498db;'>${salary_report['實領薪資']:,}</span></h2></div>", unsafe_allow_html=True)
 
     elif selected_page == "基本資料與費率設定":
-        st.markdown("<h2 style='text-align: center; color: #2C3E50;'>系統基本資料與費率設定</h2><hr>", unsafe_allow_html=True)
-        tab1, tab2, tab3 = st.tabs(["司機名冊管理", "車輛與尺寸管理", "地區運費標準設定"])
+        st.markdown("<h2 style='text-align: center;'>系統基本資料與費率設定</h2><hr>", unsafe_allow_html=True)
+        tab1, tab2, tab3 = st.tabs(["司機名冊", "車輛與尺寸", "地區運費標準"])
         with tab1:
             col1, col2 = st.columns(2)
             with col1:
@@ -410,18 +391,17 @@ else:
                     st.markdown("#### 新增司機")
                     new_d_id = st.text_input("司機代號", key="settings_new_driver_id")
                     new_d_name = st.text_input("司機姓名", key="settings_new_driver_name")
-                    if st.button("確認新增司機", use_container_width=True, key="btn_add_driver"):
-                        if new_d_id and new_d_name and add_driver(new_d_id, new_d_name):
+                    if st.button("確認新增", use_container_width=True, key="btn_add_driver"):
+                        if st.session_state["role"] == "訪客":
+                            st.toast("訪客模式：無法新增司機！")
+                        elif new_d_id and new_d_name and add_driver(new_d_id, new_d_name):
                             st.success(f"成功新增：{new_d_id}")
                             st.rerun()
-                        else:
-                            st.error("新增失敗")
             with col2:
                 with st.container(border=True):
                     st.markdown("#### 現有司機")
                     drivers = get_all_drivers()
-                    if drivers:
-                        st.dataframe(pd.DataFrame([{"代號": d.driver_id, "姓名": d.name} for d in drivers]), use_container_width=True, hide_index=True)
+                    if drivers: st.dataframe(pd.DataFrame([{"代號": d.driver_id, "姓名": d.name} for d in drivers]), use_container_width=True, hide_index=True)
         with tab2:
             col3, col4 = st.columns(2)
             with col3:
@@ -429,25 +409,28 @@ else:
                     st.markdown("#### 新增車輛")
                     new_t_num = st.text_input("車號", key="settings_new_truck_num")
                     new_t_size = st.radio("尺寸", ["20呎", "40呎"], horizontal=True, key="settings_new_truck_size_radio")
-                    if st.button("確認新增車輛", use_container_width=True, key="btn_add_truck"):
-                        if new_t_num and add_truck(new_t_num, new_t_size):
+                    if st.button("確認新增", use_container_width=True, key="btn_add_truck"):
+                        if st.session_state["role"] == "訪客":
+                            st.toast("訪客模式：無法新增車輛！")
+                        elif new_t_num and add_truck(new_t_num, new_t_size):
                             st.success(f"成功新增車號：{new_t_num}")
                             st.rerun()
             with col4:
                 with st.container(border=True):
                     st.markdown("#### 現有車輛")
                     trucks = get_all_trucks()
-                    if trucks:
-                        st.dataframe(pd.DataFrame([{"車號": t.truck_number, "尺寸": t.size} for t in trucks]), use_container_width=True, hide_index=True)
+                    if trucks: st.dataframe(pd.DataFrame([{"車號": t.truck_number, "尺寸": t.size} for t in trucks]), use_container_width=True, hide_index=True)
         with tab3:
             with st.container(border=True):
                 c5, c6, c7 = st.columns(3)
                 r_name = c5.text_input("地區名稱", key="settings_region_name")
                 r_price = c6.number_input("基礎運費", value=900, step=50, key="settings_region_price")
                 if c7.button("儲存費率", use_container_width=True, key="btn_save_price_rule") and r_name:
-                    update_or_add_price_rule(r_name, r_price)
-                    st.success("費率更新成功！")
-                    st.rerun()
+                    if st.session_state["role"] == "訪客":
+                        st.toast("訪客模式：無法修改費率規則！")
+                    else:
+                        update_or_add_price_rule(r_name, r_price)
+                        st.success("費率更新成功！")
+                        st.rerun()
                 rules = get_all_price_rules()
-                if rules:
-                    st.dataframe(pd.DataFrame([{"地區": r.region_name, "運費": r.base_price} for r in rules]), use_container_width=True, hide_index=True)
+                if rules: st.dataframe(pd.DataFrame([{"地區": r.region_name, "運費": r.base_price} for r in rules]), use_container_width=True, hide_index=True)
