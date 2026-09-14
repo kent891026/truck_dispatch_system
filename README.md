@@ -179,9 +179,9 @@ graph LR
 ---
 
 ## 作者
-**陳致穎 (Chen Zhih-Ying)**
-* National Yunlin University of Science and Technology
+**陳致穎 (Chen Chih-Ying)**
+* Bachelor of Architecture, National Yunlin University of Science and Technology
 * Email: kent891026@gmail.com
 * GitHub: [kent891026](https://github.com/kent891026)
 
-*專案建置於 2026 年，為學術展示與軟體工程實踐專案*
+*專案建置於 2026 年，為學術展示與軟體工程實踐專案紀錄*
