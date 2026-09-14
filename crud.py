@@ -9,7 +9,7 @@ engine = create_engine('sqlite:///data/test_truck.db', echo=False)
 Base.metadata.create_all(bind=engine)  
 SessionLocal = sessionmaker(bind=engine)
 
-
+# 新增或更新派車單資料，檢查是否已存在相同日期、司機與櫃號的派車單，如果存在則覆寫，否則新增一筆新的派車單
 def create_or_update_dispatch_order(dispatch_order: DispatchOrderModel) -> bool:
     session = SessionLocal()
     try:
@@ -21,15 +21,14 @@ def create_or_update_dispatch_order(dispatch_order: DispatchOrderModel) -> bool:
 
         if existing_order:
             print(f"發現重複單號！準備進行資料覆寫 (司機:{dispatch_order.driver_id} / 櫃號:{dispatch_order.container_id})")
-            
+            # 更新現有派車單的欄位值
             existing_order.point_of_origin = dispatch_order.point_of_origin
             existing_order.destination_address = dispatch_order.destination_address
             existing_order.truck_number = dispatch_order.truck_number
             existing_order.cargo_owner = dispatch_order.cargo_owner
             existing_order.billing_region = dispatch_order.billing_region
             existing_order.is_return_trip = dispatch_order.is_return_trip
-            
-            # --- 加給項目更新 ---
+            # 加給項目更新
             existing_order.has_weighting = dispatch_order.has_weighting
             existing_order.has_danger_tag = dispatch_order.has_danger_tag
             existing_order.has_instrument_inspection = dispatch_order.has_instrument_inspection
@@ -38,8 +37,7 @@ def create_or_update_dispatch_order(dispatch_order: DispatchOrderModel) -> bool:
             existing_order.is_holiday = dispatch_order.is_holiday
             existing_order.early_shift_type = dispatch_order.early_shift_type
             existing_order.unloading_overtime_hours = dispatch_order.unloading_overtime_hours
-            
-            # --- 金額拆解更新 ---
+            # 金額拆解更新
             existing_order.basic_freight = dispatch_order.basic_freight
             existing_order.subsidy_total = dispatch_order.subsidy_total
             
@@ -47,26 +45,22 @@ def create_or_update_dispatch_order(dispatch_order: DispatchOrderModel) -> bool:
             old_remarks = existing_order.remarks if existing_order.remarks else ""
             new_remarks_input = dispatch_order.remarks if dispatch_order.remarks else ""
             existing_order.remarks = f"{old_remarks} ➔ 更新為: {new_remarks_input} [系統強制紀錄: 於 {current_time} 覆寫]"
-
+            # 把更新後的資料寫入資料庫
             session.commit()
-            print("資料覆寫與紀錄追加成功！")
-            
+            print("資料覆寫與紀錄追加成功")
         else:
             session.add(dispatch_order)
             session.commit()
             print(f"成功新增一筆派車單：{dispatch_order.date} - 司機 {dispatch_order.driver_id}")
-
         return True
-
     except Exception as e:
         session.rollback() 
         print(f"寫入/更新失敗：{e}")
         return False
-
     finally:
         session.close()
 
-
+# 取得指定司機與月份的派車單
 def get_order_by_driver_and_month(driver_id: str, year_month: str):
     session = SessionLocal()
     try:
@@ -80,17 +74,14 @@ def get_order_by_driver_and_month(driver_id: str, year_month: str):
         return [] 
     finally:
         session.close()
-
-
-# --- 基本資料設定專用函式 ---
-
+# 基本資料設定專用函式
 def get_all_drivers():
     session = SessionLocal()
     try:
         return session.query(DriverModel).all()
     finally:
         session.close()
-
+# 加入新司機
 def add_driver(driver_id: str, name: str):
     session = SessionLocal()
     try:
@@ -104,14 +95,14 @@ def add_driver(driver_id: str, name: str):
         return False
     finally:
         session.close()
-
+# 得到所有車輛資料
 def get_all_trucks():
     session = SessionLocal()
     try:
         return session.query(TruckModel).all()
     finally:
         session.close()
-
+# 加入新車輛
 def add_truck(truck_number: str, size: str):
     session = SessionLocal()
     try:
@@ -125,14 +116,14 @@ def add_truck(truck_number: str, size: str):
         return False
     finally:
         session.close()
-
+# 取得所有地區費率資料
 def get_all_price_rules():
     session = SessionLocal()
     try:
         return session.query(PriceRuleModel).all()
     finally:
         session.close()
-
+# 更新或新增地區費率資料
 def update_or_add_price_rule(region_name: str, base_price: int):
     session = SessionLocal()
     try:
