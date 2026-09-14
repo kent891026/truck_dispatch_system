@@ -136,18 +136,18 @@ streamlit run app.py
 
 ```mermaid
 graph LR
-    subgraph 邊緣端 Edge Devices
+    subgraph EdgeLayer [邊緣端 Edge Devices]
         GPS[車載 GPS 設備<br/>衛星犬系統]
         Truck[連結車輛感測器]
     end
     
-    subgraph 雲端整合與管線 Data Pipeline
+    subgraph CloudLayer [雲端整合與管線 Data Pipeline]
         API[Webhook / API 接口]
         ETL[資料清洗與特徵工程]
         TSDB[(時序資料庫<br/>Time-Series DB)]
     end
     
-    subgraph AI 決策與監控層 AI & Monitoring
+    subgraph AILayer [AI 決策與監控層 AI & Monitoring]
         Speed[超速與違規事件映射]
         Idle[停等時間分析與油耗估算]
         Dash[營運即時監控儀表板]
@@ -164,12 +164,12 @@ graph LR
     Speed -- 綁定特定司機與時段 --> Dash
     Idle -- 異常停等警報 --> Dash
     
-    classDef edge fill:#eef2ff,stroke:#818cf8;
-    classDef cloud fill:#f0fdf4,stroke:#4ade80;
-    classDef ai fill:#fff7ed,stroke:#fdba74;
-    class 邊緣端 edge;
-    class 雲端整合與管線 cloud;
-    class AI 決策與監控層 ai;
+    classDef edgeStyle fill:#eef2ff,stroke:#818cf8;
+    classDef cloudStyle fill:#f0fdf4,stroke:#4ade80;
+    classDef aiStyle fill:#fff7ed,stroke:#fdba74;
+    class EdgeLayer edgeStyle;
+    class CloudLayer cloudStyle;
+    class AILayer aiStyle;
 ```
 
 1. **IoV 車聯網整合**：預計與「衛星犬」進行 API 串接，建立 InfluxDB 等時序資料庫，即時追蹤車輛動態。
