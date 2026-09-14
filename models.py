@@ -41,7 +41,7 @@ class DispatchOrderModel(Base):
     # 資料庫表格名稱
     __tablename__ = 'dispatch_orders'
 
-    # 系統自動產生的唯一編號，設為 primary_key (主鍵)
+    # 系統自動產生的唯一編號，設為 primary_key
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # 開始把變數轉換成 Column
@@ -63,7 +63,7 @@ class DispatchOrderModel(Base):
     has_danger_tag = Column(Boolean, default=False)            # 危標 (100)
     has_instrument_inspection = Column(Boolean, default=False) # 儀檢 (100)
     has_freezing_plate = Column(Boolean, default=False)        # 冷凍板 (300)
-
+    
     is_night_shift = Column(Boolean, default=False)            # 夜間出車 (1000)
     is_holiday = Column(Boolean, default=False)                # 假日出車 (1000)
 
@@ -85,7 +85,5 @@ if __name__ == "__main__":
     engine = create_engine('sqlite:///test_truck.db', echo=True)
     
     # create_all 會自動檢查，把尚未建立的新表格 (Driver, Truck, PriceRule) 蓋出來
-    # SQLite 原生不支援直接在舊表格 (dispatch_orders) 中新增欄位。
-    # 為了開發方便，如果遇到舊表格無法自動擴充的問題，建議先刪除舊的 test_truck.db 檔案，
-    # 讓程式重新建立一個包含所有新欄位的乾淨資料庫。
+    # 讓程式重新建立一個包含所有新欄位的乾淨資料庫
     Base.metadata.create_all(engine)
