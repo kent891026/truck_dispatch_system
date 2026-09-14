@@ -1,5 +1,8 @@
+
+# 提供用於渲染頁面標題和區塊標題的函數，並使用 Streamlit 的 Markdown 功能來實現自訂樣式的 HTML 元素
 import streamlit as st
 
+# 渲染頁面標題，包含主標題、描述文字，以及右側的系統狀態指示燈
 def page_header(title, description):
     st.markdown(
         f"""
@@ -17,6 +20,7 @@ def page_header(title, description):
         unsafe_allow_html=True
     )
 
+# 渲染區塊標題，包含標題文字與可選的描述文字
 def section_title(title, description=None):
     st.markdown(
         f"<div style='color: #344054; font-size: 16px; font-weight: 700; margin-top: 24px; margin-bottom: 8px;'>{title}</div>", 

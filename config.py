@@ -1,16 +1,15 @@
+
 import streamlit as st
 
 def setup_page():
     """初始化 Streamlit 頁面設定"""
     st.set_page_config(
         page_title="FLEETFLOW",
-        page_icon="🚛",
         layout="wide",
         initial_sidebar_state="expanded",
     )
 
 def load_global_css():
-    """載入企業 SaaS 風格的全局 CSS (思源宋體 安全修復版)"""
     st.markdown(
         """
         <style>
@@ -20,7 +19,7 @@ def load_global_css():
         /* 2. 全局背景 */
         .stApp { background-color: #F5F7FA; }
         
-        /* 🌟 精準字體套用：拔除 span 和 div 的強制覆寫，把 Streamlit 內建的圖示 (Icon) 還給系統！ */
+        /* 精準字體套用：拔除 span 和 div 的強制覆寫，把 Streamlit 內建的圖示 (Icon) 還給系統！ */
         .stApp, h1, h2, h3, h4, p, label, input, li, .stButton > button {
             font-family: 'Noto Serif TC', serif !important;
         }
